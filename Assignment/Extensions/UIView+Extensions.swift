@@ -23,16 +23,13 @@ import UIKit
     @IBInspectable var needDashedBorder: Bool {
         set{
             if newValue == true {
-                addDashedBorder()
+                addDashedView()
             }
         }
         get {
             return true
         }
     }
-    
-    
-    
 }
 
 
@@ -48,13 +45,14 @@ extension UIView {
         self.layer.masksToBounds = false
     }
     
-    func addDashedBorder() {
+    /// Adds dased line in a view
+    ///
+    func addDashedView() {
         //Create a CAShapeLayer
         let shapeLayer = CAShapeLayer()
         if #available(iOS 11.0, *) {
             shapeLayer.strokeColor = UIColor(named: "microPhoneColor")!.cgColor
         } else {
-            // Fallback on earlier versions
             shapeLayer.strokeColor = UIColor.microphoneColor.cgColor
         }
         shapeLayer.lineWidth = 2
@@ -71,3 +69,4 @@ extension UIView {
     
     
 }
+

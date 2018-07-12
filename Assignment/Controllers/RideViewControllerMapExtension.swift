@@ -24,11 +24,11 @@ extension RideViewController {
                                               longitude: 55.309,
                                               zoom: 15.0)
         mapView = GMSMapView.map(withFrame: mapHolderView.bounds, camera: camera)
-//        mapView.isMyLocationEnabled = true
-//        mapView.delegate = self
+        //        mapView.isMyLocationEnabled = true
+        //        mapView.delegate = self
         mapHolderView.addSubview(mapView)
     }
-
+    
     /// This method is used to update user's current location on map
     /// It also updates Pickup location as current location
     ///
@@ -60,7 +60,7 @@ extension RideViewController {
     /// - Parameter isSource: Bool - Indicating whether the place is pick/drop
     ///
     internal func addMarkerAt(place: GMSPlace, isSource: Bool) {
-
+        
         let marker = GMSMarker()
         marker.position = CLLocationCoordinate2D(latitude: place.coordinate.latitude,
                                                  longitude: place.coordinate.longitude)
@@ -71,12 +71,12 @@ extension RideViewController {
         marker.map = mapView
         
         clearMarkers(isSource: isSource)
-       
+        
         if isSource == true {
             sourceMarker = marker
         } else {
             destinationMarker = marker
-//            mapView.selectedMarker = marker  //To show info window programatically select marker
+            //            mapView.selectedMarker = marker  //To show info window programatically select marker
         }
     }
     
@@ -86,7 +86,7 @@ extension RideViewController {
     ///
     private func getMarkerIconView(name: String?) -> UIView {
         let iconView = Bundle.main.loadNibNamed(
-                        Constants.mapIconViewNibName, owner: self, options: nil)![0] as! MapIconView
+            Constants.mapIconViewNibName, owner: self, options: nil)![0] as! MapIconView
         iconView.nameLabel.text = name ?? " "
         return iconView
     }
@@ -100,12 +100,12 @@ extension RideViewController {
             var bounds = GMSCoordinateBounds(coordinate: origin, coordinate: destination)
             bounds = bounds.includingCoordinate(origin)
             bounds = bounds.includingCoordinate(destination)
-//            mapView.animate(with:GMSCameraUpdate.fit(bounds, withPadding: 150.0))
+            //            mapView.animate(with:GMSCameraUpdate.fit(bounds, withPadding: 150.0))
             
             if let camera = mapView.camera(for: bounds, insets: UIEdgeInsetsMake(100, 0, 100, 0)) {
-                 mapView.camera = camera
+                mapView.camera = camera
             }
-           
+            
         }
         else {
             let markerPoint = (origin != nil) ? origin : destination
@@ -119,7 +119,8 @@ extension RideViewController {
         
     }
     
-    ///
+    /// On editing pickup/ dropoff location or on speech recognition
+    /// Shows googles autoCompletion view.
     internal func showAutoCompletionView() {
         let autocompleteController = GMSAutocompleteViewController()
         autocompleteController.delegate = self
@@ -137,6 +138,7 @@ extension RideViewController {
         })
     }
     
+    /// On adding source/ destination location marker, clearing previous one.
     private func clearMarkers(isSource: Bool) {
         if isSource == true {
             sourceMarker?.map = nil
@@ -204,3 +206,4 @@ extension RideViewController: GMSAutocompleteViewControllerDelegate {
 //        return infoWindow
 //    }
 //}
+

@@ -60,13 +60,8 @@ class RideViewController: UIViewController, SideMenuItemContent {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        doInitialSetup()
         
-        tripModesHolder.addShadow(radius: 0.4, opacity: 0.1)
-        placesClient = GMSPlacesClient.shared()
-        requestLocationAccessAuthorization()
-        
-        updateTripMode()
-        checkAndAskSpeechAuthorization()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -77,6 +72,15 @@ class RideViewController: UIViewController, SideMenuItemContent {
     }
     
     //MARK : Private methods
+    private func doInitialSetup() {
+        tripModesHolder.addShadow(radius: 0.4, opacity: 0.1)
+        updateTripMode()
+        
+        placesClient = GMSPlacesClient.shared()
+        requestLocationAccessAuthorization()
+        checkAndRequestSpeechAuthorization()
+        
+    }
     
     private func requestLocationAccessAuthorization() {
         locationManger.delegate     = self
@@ -88,12 +92,14 @@ class RideViewController: UIViewController, SideMenuItemContent {
         } else if (currentAuthorizationStatus  == .authorizedWhenInUse) {
             updateCurrentPlace()
         }
+        
     }
     
-    private func checkAndAskSpeechAuthorization() {
+    private func checkAndRequestSpeechAuthorization() {
+        
         switch SFSpeechRecognizer.authorizationStatus() {
         case .notDetermined:
-            askSpeechPermission()
+            requestSpeechRecognitionPermission()
         case .authorized:
             self.status = .ready
         case .denied, .restricted:
@@ -101,8 +107,8 @@ class RideViewController: UIViewController, SideMenuItemContent {
         }
     }
     
-    /// Ask permission to the user to access their speech data.
-    func askSpeechPermission() {
+    /// Asks permission to the user to access their speech data.
+    func requestSpeechRecognitionPermission() {
         SFSpeechRecognizer.requestAuthorization { status in
             OperationQueue.main.addOperation {
                 switch status {
@@ -115,38 +121,9 @@ class RideViewController: UIViewController, SideMenuItemContent {
         }
     }
     
-    internal func calculateDistanceBetweenTwoLocations() {
-        distanceMatrix = nil
-        
-        guard let origin = origin,
-            let destination = destination,
-            let requestUrl = URL(string: Constants.distanceMatrixAPI) else {
-                return
-        }
-        
-        print("sending duration request")
-        let params = [ "origins": "\(origin.latitude),\(origin.longitude)",
-            "destinations": "\(destination.latitude),\(destination.longitude)",
-            "key": Constants.googlePlacesAPIKey]
-        
-        APIManager.getReuest(requestUrl: requestUrl,
-                             method: .get,
-                             params: params)
-        { (finished, result) in
-            
-            self.distanceMatrix = DistanceMatrix(response: result as! [String : AnyObject])
-            if let duration = self.distanceMatrix?.durationText {
-                print("Duration: \(duration)")
-                DispatchQueue.main.async {
-//                    self.destinationMarker?.tracksInfoWindowChanges = true
-//                    self.infoWindow?.updateDurationLabel(duration: duration)
-                     let iconView = self.destinationMarker?.iconView as! MapIconView
-                    iconView.updateDurationLabel(duration: duration)
-                }
-            }
-        }
-    }
-    
+    /// updates trip modes UI.
+    /// text color and selection image will be updated based on current selection.
+    /// Default trip mode is SingleTrip
     private func updateTripMode() {
         let selectedColor = UIColor.white
         let normalColor = UIColor.tripModeTextColor
@@ -169,6 +146,41 @@ class RideViewController: UIViewController, SideMenuItemContent {
         
     }
     
+    /// Once pickup and dropoff locations are selected, calcualte the duration between them
+    /// Using Google's distance matrix API
+    /// On getting response, destination marker's icon view updates with the duration
+    internal func calculateDistanceBetweenTwoLocations() {
+        distanceMatrix = nil
+        
+        guard let origin = origin,
+            let destination = destination,
+            let requestUrl = URL(string: Constants.distanceMatrixAPI) else {
+                return
+        }
+        
+        let params = [ "origins": "\(origin.latitude),\(origin.longitude)",
+            "destinations": "\(destination.latitude),\(destination.longitude)",
+            "key": Constants.googlePlacesAPIKey]
+        
+        APIManager.getReuest(requestUrl: requestUrl,
+                             method: .get,
+                             params: params)
+        { (finished, result) in
+            
+            self.distanceMatrix = DistanceMatrix(response: result as! [String : AnyObject])
+            if let duration = self.distanceMatrix?.durationText {
+                print("Duration: \(duration)")
+                DispatchQueue.main.async {
+                    //                    self.destinationMarker?.tracksInfoWindowChanges = true
+                    //                    self.infoWindow?.updateDurationLabel(duration: duration)
+                    let iconView = self.destinationMarker?.iconView as! MapIconView
+                    iconView.updateDurationLabel(duration: duration)
+                }
+            }
+        }
+    }
+    
+    
     private func recognizeLocation() {
         switch status {
         case .ready:
@@ -183,7 +195,7 @@ class RideViewController: UIViewController, SideMenuItemContent {
                 searchKey.count > 0{
                 showAutoCompletionView()
             }
-
+            
         default:
             break
         }
@@ -250,8 +262,8 @@ class RideViewController: UIViewController, SideMenuItemContent {
             sender.tintColor = (sender.tintColor == UIColor(named: "microPhoneColor")) ? UIColor(named: "selectionColor") : UIColor(named: "microPhoneColor")
         } else {
             // Fallback on earlier versions
-           sender.tintColor = (sender.tintColor == UIColor.microphoneColor) ? UIColor.selectionColor : UIColor.microphoneColor
-
+            sender.tintColor = (sender.tintColor == UIColor.microphoneColor) ? UIColor.selectionColor : UIColor.microphoneColor
+            
         }
         activeTextField = pickupLocationField
         recognizeLocation()
